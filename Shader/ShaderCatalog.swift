@@ -8,24 +8,28 @@ import SwiftUI
 /// One entry in the collection. Add a case here to list a new effect.
 enum ShaderEffect: String, CaseIterable, Identifiable, Hashable {
     case carousel
+    case globe
 
     var id: Self { self }
 
     var title: String {
         switch self {
         case .carousel: "Carousel"
+        case .globe: "Globe"
         }
     }
 
     var summary: String {
         switch self {
         case .carousel: "3D cards refracted through a glass edge"
+        case .globe: "Dotted globe that flies to the country you pick"
         }
     }
 
     var variants: String {
         switch self {
         case .carousel: CarouselStyle.allCases.map(\.title).joined(separator: " · ")
+        case .globe: "Regions · Countries"
         }
     }
 
@@ -36,12 +40,15 @@ enum ShaderEffect: String, CaseIterable, Identifiable, Hashable {
             CardCarousel(count: DemoCard.allCases.count, isInteractive: false, autoAdvance: .seconds(2.4)) { index in
                 DemoCard.allCases[index].view
             }
+        case .globe:
+            GlobePreview()
         }
     }
 
     @ViewBuilder var destination: some View {
         switch self {
         case .carousel: CarouselShowcaseView()
+        case .globe: CountryPickerView()
         }
     }
 }

@@ -1,0 +1,23 @@
+# Xcode per-user state (window layout, breakpoints, scheme order)
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+*.xccheckout
+
+# Build output
+DerivedData/
+build/
+*.ipa
+*.dSYM
+*.dSYM.zip
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# macOS
+.DS_Store
+
+# Tools/BakeCountryMap.swift: downloaded source data and its debug preview
+/ne_*.geojson
+Shader/Globe/preview.png

@@ -50,6 +50,9 @@ final class GlobeController {
     /// Region highlight per map ID, eased toward its target every frame.
     @ObservationIgnored private var highlight = [Float](repeating: 0, count: 256)
     @ObservationIgnored private var appearance = 0.0
+    /// 0 = light theme, 1 = dark, eased toward `targetDarkness` when the theme changes.
+    @ObservationIgnored private var darkness = 0.0
+    @ObservationIgnored private var targetDarkness = 0.0
     /// 0…1 while flying: dots swell and brighten in transit.
     @ObservationIgnored private var travelBoost = 0.0
     @ObservationIgnored private var lastTime: CFTimeInterval?
@@ -57,6 +60,7 @@ final class GlobeController {
     private static let idleSpin = 0.05            // radians per second
     private static let hideDuration = 0.28
     private static let revealDuration = 0.42
+    private static let themeDuration = 0.35
     /// Spacing of a selected country's dots once the camera has arrived.
     private static let countryDotPitch = 4.4      // points
 
@@ -70,6 +74,14 @@ final class GlobeController {
             let latitude = min(max(home.latitude * 0.7, -35), 35)
             camera.target = GlobeMath.direction(latitude: latitude, longitude: home.longitude)
         }
+        wake()
+    }
+
+    func setTheme(_ theme: GlobeTheme, animated: Bool) {
+        let target = theme == .dark ? 1.0 : 0.0
+        guard target != targetDarkness || (!animated && darkness != target) else { return }
+        targetDarkness = target
+        if !animated || reduceMotion { darkness = target }
         wake()
     }
 
@@ -202,6 +214,11 @@ final class GlobeController {
         var moving = isDragging
         if appearance < 1 {
             appearance = min(appearance + dt / 0.6, 1)
+            moving = true
+        }
+        if darkness != targetDarkness {
+            let step = dt / Self.themeDuration
+            darkness = darkness < targetDarkness ? min(darkness + step, targetDarkness) : max(darkness - step, targetDarkness)
             moving = true
         }
 
@@ -376,10 +393,19 @@ final class GlobeController {
         u.rowStep = .pi / 128
         u.landLevel = Float(0.58 + (0.3 - 0.58) * zoom)
         u.oceanLevel = Float(0.12 + (0.22 - 0.12) * zoom)
-        u.highlightLevel = 0.45
-        u.countryLevel = 0.8
         u.boost = Float(travelBoost)
         u.opacity = Float(appearance * appearance * (3 - 2 * appearance))
+        let dark = Float(darkness * darkness * (3 - 2 * darkness))
+        let style = GlobeTheme.light.style.mixed(with: GlobeTheme.dark.style, dark)
+        u.paper = style.paper
+        u.ink = style.ink
+        u.dotGain = style.dotGain
+        u.highlightLevel = style.highlightLevel
+        u.restLevel = style.restLevel
+        u.countryLevel = style.countryLevel
+        u.highlightGrowth = style.highlightGrowth
+        // All lit countries share one weight, so the largest is how lit the region is.
+        u.regionFocus = highlight.max() ?? 0
 
         if let shown = shownCountry {
             let center = shown.center

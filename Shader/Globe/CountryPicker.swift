@@ -12,6 +12,7 @@ struct CountryPickerView: View {
     @State private var globe = GlobeController()
     @State private var isDragging = false
     @GestureState private var isGestureActive = false
+    @AppStorage(GlobeTheme.storageKey) private var theme: GlobeTheme = .light
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
@@ -25,7 +26,7 @@ struct CountryPickerView: View {
         }
         .background {
             ZStack {
-                GlobeView(controller: globe)
+                GlobeView(controller: globe, theme: theme)
                 Color.clear
                     .contentShape(.rect)
                     .gesture(globeGesture)
@@ -35,11 +36,25 @@ struct CountryPickerView: View {
             .accessibilityLabel("Globe")
             .accessibilityValue(globe.country?.name ?? globe.region?.title ?? "World")
         }
-        .background(.black)
-        .environment(\.colorScheme, .dark)
+        .background(theme.background)
+        .environment(\.colorScheme, theme.colorScheme)
+        // Keyed to the value: writes to `@AppStorage` don't carry `withAnimation`'s
+        // transaction. Matches the globe's own fade.
+        .animation(.easeInOut(duration: 0.35), value: theme)
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
-        .toolbarColorScheme(.dark, for: .navigationBar)
+        .toolbarColorScheme(theme.colorScheme, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    theme = theme == .light ? .dark : .light
+                } label: {
+                    Label(theme == .light ? "Dark Appearance" : "Light Appearance",
+                          systemImage: theme == .light ? "moon.fill" : "sun.max.fill")
+                        .contentTransition(.symbolEffect(.replace))
+                }
+            }
+        }
         .onChange(of: reduceMotion, initial: true) { globe.reduceMotion = reduceMotion }
         .onChange(of: isGestureActive) { _, active in
             // The system cancelled the drag (no `onEnded`): let the globe settle.
@@ -55,10 +70,10 @@ struct CountryPickerView: View {
         VStack(spacing: 6) {
             Text("Select your country")
                 .font(.system(size: 23, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
             Text("Choose a region, then a country")
                 .font(.system(size: 15))
-                .foregroundStyle(.white.opacity(0.5))
+                .foregroundStyle(.primary.opacity(0.5))
         }
         .multilineTextAlignment(.center)
         .padding(.top, 6)
@@ -80,8 +95,8 @@ struct CountryPickerView: View {
         .padding(.bottom, 16)
         .background {
             // Dots fade out as they reach the controls.
-            LinearGradient(stops: [.init(color: .black.opacity(0), location: 0),
-                                   .init(color: .black, location: 0.4)],
+            LinearGradient(stops: [.init(color: theme.background.opacity(0), location: 0),
+                                   .init(color: theme.background, location: 0.4)],
                            startPoint: .top, endPoint: .bottom)
                 .padding(.top, -64)
                 .ignoresSafeArea(edges: .bottom)
@@ -129,7 +144,7 @@ private struct RegionStrip: View {
                                 .frame(width: 56, height: 34)
                             Text(region.title)
                                 .font(.system(size: 12, weight: isSelected ? .semibold : .regular))
-                                .foregroundStyle(.white.opacity(isSelected ? 1 : 0.32))
+                                .foregroundStyle(.primary.opacity(isSelected ? 1 : 0.35))
                                 .lineLimit(1)
                                 .fixedSize()
                         }
@@ -162,8 +177,9 @@ private struct RegionThumbnail: View {
                 let y = Double(dot.y) * size.height
                 path.addEllipse(in: CGRect(x: x - radius, y: y - radius, width: 2 * radius, height: 2 * radius))
             }
-            context.fill(path, with: .color(.white))
+            context.fill(path, with: .foreground)
         }
+        .foregroundStyle(.primary)
         .opacity(isSelected ? 0.9 : 0.3)
         .accessibilityHidden(true)
     }
@@ -225,14 +241,14 @@ private struct CountryChip: View {
                     .accessibilityHidden(true)
                 Text(country.name)
                     .font(.system(size: 17, weight: isSelected ? .semibold : .regular))
-                    .foregroundStyle(.white.opacity(isSelected ? 1 : 0.8))
+                    .foregroundStyle(.primary.opacity(isSelected ? 1 : 0.8))
                     .lineLimit(1)
             }
             .padding(.horizontal, 16)
             .frame(height: 46)
-            .background(Color(white: isSelected ? 0.16 : 0.09), in: shape)
+            .background(.primary.opacity(isSelected ? 0.14 : 0.07), in: shape)
             .overlay {
-                shape.strokeBorder(.white.opacity(isSelected ? 0.32 : 0), lineWidth: 1)
+                shape.strokeBorder(.primary.opacity(isSelected ? 0.3 : 0), lineWidth: 1)
             }
             .contentShape(shape)
         }
@@ -247,11 +263,12 @@ private struct CountryChip: View {
 /// A slowly turning, non-interactive globe for the catalog.
 struct GlobePreview: View {
     @State private var globe = GlobeController()
+    @AppStorage(GlobeTheme.storageKey) private var theme: GlobeTheme = .light
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        GlobeView(controller: globe)
-            .background(.black)
+        GlobeView(controller: globe, theme: theme)
+            .background(theme.background)
             .onChange(of: reduceMotion, initial: true) { globe.reduceMotion = reduceMotion }
             .task { await globe.load() }
     }

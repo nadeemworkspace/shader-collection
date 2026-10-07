@@ -134,33 +134,39 @@ struct CardCarousel<Card: View>: View {
     }
 
     private func drumStage(layout: CarouselLayout, position: Double) -> some View {
-        let center = CGPoint(x: layout.size.width / 2, y: layout.size.height / 2)
+        // The cards lie flat, side by side, on one strip that a single shader pass wraps
+        // around the drum (cards on a drum never overlap, so no sorting is needed). They
+        // sit at whole-card offsets from the nearest resting position and the fraction
+        // goes to the shader, so the strip itself only changes when a card passes the
+        // centre.
+        let anchor = position.rounded()
+        let strip = layout.drumStripSize
         return ZStack {
             ForEach(0..<count, id: \.self) { index in
-                let offset = layout.offset(of: index, position: position)
-                if layout.isOnDrumFront(offset) {
-                    // Each card is drawn flat at the centre of a full-size layer, then
-                    // bent into place by the shader.
+                let slot = layout.offset(of: index, position: anchor)
+                if layout.isOnDrumStrip(slot) {
                     card(index)
                         .environment(\.cardUnit, layout.cardUnit)
                         .frame(width: layout.cardSize.width, height: layout.cardSize.height)
-                        .frame(width: layout.size.width, height: layout.size.height)
-                        .layerEffect(
-                            ShaderLibrary.drumWrap(
-                                .float2(center),
-                                .float(layout.drumRadius),
-                                .float(layout.cameraDistance),
-                                .float(offset * layout.drumPitch),
-                                .color(.carouselBackground),
-                                .float(0.9),            // haze at 90°
-                                .float(10)              // blur radius at 90°, points
-                            ),
-                            maxSampleOffset: layout.size
-                        )
-                        .zIndex(-abs(offset))
+                        .offset(x: slot * layout.drumPitch)
                 }
             }
         }
+        .frame(width: strip.width, height: strip.height)
+        // Flatten first so the effect sees the whole strip as one layer.
+        .drawingGroup()
+        .layerEffect(
+            ShaderLibrary.drumWrap(
+                .float2(strip.width / 2, strip.height / 2),
+                .float(layout.drumRadius),
+                .float(layout.cameraDistance),
+                .float((anchor - position) * layout.drumPitch),
+                .color(.carouselBackground),
+                .float(0.9),            // haze at 90°
+                .float(10)              // blur radius at 90°, points
+            ),
+            maxSampleOffset: CGSize(width: layout.drumSampleReach, height: 0)
+        )
         .frame(width: layout.size.width, height: layout.size.height)
         .background(Color.carouselBackground)
     }
@@ -208,7 +214,7 @@ struct CardCarousel<Card: View>: View {
 /// - Flip: turned `180° · o`, slid `o · spacing` sideways and pushed `o² · depth` away
 ///   from a perspective camera.
 /// - Drum: bent around a cylinder of radius `drumRadius`, `o · drumPitch` of arc away
-///   from the front.
+///   from the front. The cards are laid flat on a strip that is wrapped as a whole.
 struct CarouselLayout {
     let size: CGSize
     let style: CarouselStyle
@@ -303,11 +309,35 @@ struct CarouselLayout {
         min(max((1.5 - abs(offset)) / 0.25, 0), 1)
     }
 
-    /// Whether any of the card is on the part of the drum the camera can see.
-    func isOnDrumFront(_ offset: Double) -> Bool {
-        let visibleAngle = acos(drumRadius / (drumRadius + cameraDistance))
-        let nearestEdge = abs(CGFloat(offset)) * drumPitch - cardSize.width / 2
-        return nearestEdge < drumRadius * visibleAngle
+    /// Angle from the front of the drum to its silhouette, as seen by the camera.
+    private var drumVisibleAngle: CGFloat {
+        acos(drumRadius / (drumRadius + cameraDistance))
+    }
+
+    /// Half the arc of the drum the camera can see, plus the half pitch the strip can be
+    /// scrolled either way before the cards move to new slots.
+    private var drumStripReach: CGFloat {
+        drumRadius * drumVisibleAngle + drumPitch / 2
+    }
+
+    /// The flat strip of cards: wide enough for every card that can be on the visible
+    /// arc, one card tall (cards are never magnified past their flat size).
+    var drumStripSize: CGSize {
+        CGSize(width: 2 * drumStripReach, height: cardSize.height)
+    }
+
+    /// Whether a card at a whole-card offset can show on the visible arc.
+    func isOnDrumStrip(_ slot: Double) -> Bool {
+        abs(CGFloat(slot)) * drumPitch - cardSize.width / 2 < drumStripReach
+    }
+
+    /// Farthest a drum pixel samples from itself: the visible arc unrolls wider than
+    /// its projection, most of all at the silhouette, plus the scroll.
+    var drumSampleReach: CGFloat {
+        let angle = drumVisibleAngle
+        let projected = drumRadius * sin(angle) * cameraDistance
+            / (cameraDistance + drumRadius * (1 - cos(angle)))
+        return drumRadius * angle - projected + drumPitch / 2 + 2
     }
 }
 

@@ -2,11 +2,11 @@
 //  DrumWrap.metal
 //  Shader
 //
-//  Wraps one flat card around the front of a vertical cylinder (the "drum"), seen by
-//  a perspective camera. The card is laid out flat at the centre of the layer; for each
-//  destination pixel we cast a ray at the cylinder, turn the hit point into arc length
-//  and height on the surface, and sample the flat card there. Cards therefore bend
-//  with the drum instead of staying flat panels.
+//  Wraps a flat strip of cards around the front of a vertical cylinder (the "drum"),
+//  seen by a perspective camera. For each destination pixel we cast a ray at the
+//  cylinder, turn the hit point into arc length and height on the surface, and sample
+//  the flat strip there. Cards therefore bend with the drum instead of staying flat
+//  panels, and the whole drum is a single pass.
 //
 
 #include <metal_stdlib>
@@ -14,12 +14,12 @@
 using namespace metal;
 
 /// - Parameters:
-///   - center: where the flat card is centred in the layer; also the screen point
-///     that faces the camera head-on.
+///   - center: the centre of the flat strip in the layer; also the screen point that
+///     faces the camera head-on.
 ///   - radius: drum radius, in points.
 ///   - camera: distance from the camera to the front of the drum, in points.
-///   - arcOffset: arc length from the front of the drum to this card's centre
-///     (positive turns the card to the right).
+///   - arcOffset: arc length from the front of the drum to the strip's centre
+///     (positive turns the strip to the right).
 ///   - haze: colour cards fade toward as they turn away from the camera.
 ///   - hazeStrength: haze at 90° (0 disables it).
 ///   - blur: horizontal blur radius at 90°, in points; cards soften as they turn away,

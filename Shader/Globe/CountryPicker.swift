@@ -41,6 +41,7 @@ struct CountryPickerView: View {
         // Keyed to the value: writes to `@AppStorage` don't carry `withAnimation`'s
         // transaction. Matches the globe's own fade.
         .animation(.easeInOut(duration: 0.35), value: theme)
+        .supportedInterfaceOrientations(.portrait)
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbarColorScheme(theme.colorScheme, for: .navigationBar)

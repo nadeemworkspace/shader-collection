@@ -9,6 +9,7 @@ import SwiftUI
 enum ShaderEffect: String, CaseIterable, Identifiable, Hashable {
     case carousel
     case globe
+    case spotlight
 
     var id: Self { self }
 
@@ -16,6 +17,7 @@ enum ShaderEffect: String, CaseIterable, Identifiable, Hashable {
         switch self {
         case .carousel: "Carousel"
         case .globe: "Globe"
+        case .spotlight: "Spotlight"
         }
     }
 
@@ -23,6 +25,7 @@ enum ShaderEffect: String, CaseIterable, Identifiable, Hashable {
         switch self {
         case .carousel: "3D cards refracted through a glass edge"
         case .globe: "Dotted globe that flies to the country you pick"
+        case .spotlight: "Glowing offer card in a turning sunburst"
         }
     }
 
@@ -30,6 +33,7 @@ enum ShaderEffect: String, CaseIterable, Identifiable, Hashable {
         switch self {
         case .carousel: CarouselStyle.allCases.map(\.title).joined(separator: " · ")
         case .globe: "Regions · Countries"
+        case .spotlight: "Rays · Glow · Shimmer"
         }
     }
 
@@ -42,6 +46,8 @@ enum ShaderEffect: String, CaseIterable, Identifiable, Hashable {
             }
         case .globe:
             GlobePreview()
+        case .spotlight:
+            SpotlightPreview()
         }
     }
 
@@ -49,6 +55,7 @@ enum ShaderEffect: String, CaseIterable, Identifiable, Hashable {
         switch self {
         case .carousel: CarouselShowcaseView()
         case .globe: CountryPickerView()
+        case .spotlight: SpotlightShowcaseView()
         }
     }
 }

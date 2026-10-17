@@ -1,6 +1,6 @@
 SwiftUI app with a collection of Metal shaders
 
-![The Carousel in its flip and drum styles, the Globe zoomed in on India, and the Spotlight offer card, each running on an iPhone](docs/showcase.png)
+![The Carousel in its flip and drum styles, the whole dotted Globe, and the Spotlight offer card, each running on an iPhone](docs/showcase.png)
 
 ## Effects
 

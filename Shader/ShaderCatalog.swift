@@ -10,6 +10,7 @@ enum ShaderEffect: String, CaseIterable, Identifiable, Hashable {
     case carousel
     case globe
     case spotlight
+    case matrix
 
     var id: Self { self }
 
@@ -18,6 +19,7 @@ enum ShaderEffect: String, CaseIterable, Identifiable, Hashable {
         case .carousel: "Carousel"
         case .globe: "Globe"
         case .spotlight: "Spotlight"
+        case .matrix: "Matrix"
         }
     }
 
@@ -26,6 +28,7 @@ enum ShaderEffect: String, CaseIterable, Identifiable, Hashable {
         case .carousel: "3D cards refracted through a glass edge"
         case .globe: "Dotted globe that flies to the country you pick"
         case .spotlight: "Glowing offer card in a turning sunburst"
+        case .matrix: "Digital rain in mirrored katakana, glowing green"
         }
     }
 
@@ -34,6 +37,7 @@ enum ShaderEffect: String, CaseIterable, Identifiable, Hashable {
         case .carousel: CarouselStyle.allCases.map(\.title).joined(separator: " · ")
         case .globe: "Regions · Countries"
         case .spotlight: "Rays · Glow · Shimmer"
+        case .matrix: "Rain · Depth · Glow"
         }
     }
 
@@ -48,6 +52,8 @@ enum ShaderEffect: String, CaseIterable, Identifiable, Hashable {
             GlobePreview()
         case .spotlight:
             SpotlightPreview()
+        case .matrix:
+            MatrixPreview()
         }
     }
 
@@ -56,6 +62,7 @@ enum ShaderEffect: String, CaseIterable, Identifiable, Hashable {
         case .carousel: CarouselShowcaseView()
         case .globe: CountryPickerView()
         case .spotlight: SpotlightShowcaseView()
+        case .matrix: MatrixShowcaseView()
         }
     }
 }
